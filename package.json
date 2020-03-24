@@ -1,8 +1,9 @@
 {
   "name": "icepack",
   "version": "0.0.1-2",
-  "description": "Small JS bundler without config",
+  "description": "Small Webpack-based frontend builder without config",
   "main": "index.js",
+  "bin": "./bin/icepack",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -22,5 +23,17 @@
   "bugs": {
     "url": "https://github.com/egormalyutin/icepack/issues"
   },
-  "homepage": "https://github.com/egormalyutin/icepack#readme"
+  "homepage": "https://github.com/egormalyutin/icepack#readme",
+  "devDependencies": {
+    "prettier": "^2.0.2",
+    "typescript": "^3.8.3",
+    "webpack": "^4.42.1",
+    "webpack-cli": "^3.3.11"
+  },
+  "dependencies": {
+    "chalk": "^3.0.0",
+    "pkg-dir": "^4.2.0",
+    "tmp": "^0.1.0",
+    "yargs": "^15.3.1"
+  }
 }
