@@ -27,6 +27,7 @@ exports.runCommand = opts => {
 
     const code = generate(generateSettings(opts), findRoot())
 
+    // Create temporary config file
     const file = path.join(
         os.tmpdir(),
         `icepack-${Math.floor(Math.random() * 9999999)}.js`
@@ -36,12 +37,14 @@ exports.runCommand = opts => {
 
     logInfo(`saved generated webpack config to ${file}`)
 
+    // Remove file when exiting
     signalExit(() => {
         console.log()
-        logInfo(`removing ${file}`)
         fs.unlinkSync(file)
+        logInfo(`removed ${file}`)
     })
 
+    // i could just exec webpack-cli, but cmon, who needs that?
     const cliPath = require.resolve("webpack-cli")
     process.argv = [process.argv[0], cliPath, "--config", file]
 

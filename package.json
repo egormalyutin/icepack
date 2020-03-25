@@ -25,13 +25,16 @@
   },
   "homepage": "https://github.com/egormalyutin/icepack#readme",
   "devDependencies": {
-    "prettier": "^2.0.2"
+    "@rollup/plugin-commonjs": "^11.0.2",
+    "@rollup/plugin-node-resolve": "^7.1.1"
   },
   "dependencies": {
     "chalk": "^3.0.0",
-    "globby": "^11.0.0",
     "pkg-dir": "^4.2.0",
     "signal-exit": "^3.0.2",
+    "terser-webpack-plugin": "^2.3.5",
+    "ts-loader": "^6.2.2",
+    "typescript": "^3.8.3",
     "webpack": "^4.42.1",
     "webpack-cli": "^3.3.11",
     "yargs": "^15.3.1"

@@ -4,10 +4,10 @@ root = true
 end_of_line = lf
 insert_final_newline = true
 
-[**/*.{js,ts,html}]
+[**.{js,ts,html}]
 indent_style = space
 indent_size = 4
 
-[**/*.{json,yaml,yml,sh}]
+[**.{json,yaml,yml,sh}]
 indent_style = space
 indent_size = 2

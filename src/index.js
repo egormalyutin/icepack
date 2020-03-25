@@ -1,8 +1,8 @@
-const yargs = require("yargs")
-
 const commands = require("./commands")
 
-yargs
+// TODO: entry as args
+
+require("yargs")
     .detectLocale(false)
 
     .usage("Usage: $0 <command> [options]\n       $0 [options]")
