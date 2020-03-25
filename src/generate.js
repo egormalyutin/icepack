@@ -2,10 +2,8 @@ const path = require("path")
 
 const escape = str => JSON.stringify(str)
 
-exports.escape = escape
-
 // CONFIG GENERATION
-exports.generate = (dirname, settings) => {
+module.exports = (dirname, settings) => {
     let config = 'const path = require("path")\n\n'
 
     config += `module.exports = {

@@ -1,7 +1,7 @@
 {
   "name": "icepack",
   "version": "0.0.1-2",
-  "description": "Small Webpack-based frontend builder without config",
+  "description": "Small Webpack config generator and runner",
   "main": "index.js",
   "bin": "./bin/icepack",
   "scripts": {
@@ -25,15 +25,14 @@
   },
   "homepage": "https://github.com/egormalyutin/icepack#readme",
   "devDependencies": {
-    "prettier": "^2.0.2",
-    "typescript": "^3.8.3",
-    "webpack": "^4.42.1",
-    "webpack-cli": "^3.3.11"
+    "prettier": "^2.0.2"
   },
   "dependencies": {
     "chalk": "^3.0.0",
+    "globby": "^11.0.0",
     "pkg-dir": "^4.2.0",
-    "tmp": "^0.1.0",
+    "webpack": "^4.42.1",
+    "webpack-cli": "^3.3.11",
     "yargs": "^15.3.1"
   }
 }
