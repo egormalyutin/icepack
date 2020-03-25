@@ -10,22 +10,22 @@ yargs
     .command(
         ["$0", "run"],
         "Save generated webpack config to temporary " +
-            "file and run webpack-cli with it as config (default command)",
+            "file and use it with webpack-cli (default command)",
         () => {},
         commands.runCommand
     )
 
     .command(
         "emit",
-        "Emit generated webpack config to stdout",
+        "Generated webpack config and emit it to stdout",
         () => {},
         commands.emitCommand
     )
 
     .command(
         "save",
-        "Save generated webpack config to " +
-            "webpack.config.js at project's root dir",
+        "Save generated webpack config to webpack.config.js at the" +
+            "root dir of npm package",
         () => {},
         commands.saveCommand
     )

@@ -3,56 +3,51 @@ const os = require("os")
 const path = require("path")
 const process = require("process")
 
-const pkgDir = require("pkg-dir")
-const chalk = require("chalk")
-
 const generate = require("./generate")
+const { logInfo, findRoot, generateSettings } = require("./util")
 
-const error = text => console.error("  " + chalk.bold.red("error") + " " + text)
-const info = text => console.error("  " + chalk.bold.blue("info") + " " + text)
-
-const generateSettings = opts => ({
-    entry: opts.entry || "./src/index.js",
-    dist: opts.dist || "dist"
-})
-
+// Generated webpack config and emit it to stdout",
 exports.emitCommand = opts => {
-    const code = generate(null, generateSettings(opts))
+    const code = generate(generateSettings(opts))
     console.log(code)
 }
 
-const findRoot = () => {
-    const root = pkgDir.sync()
-    if (!root) {
-        error(
-            "failed to find the root directory of npm package in " +
-                process.cwd()
-        )
-        process.exit(1)
-    }
-    return root
-}
-
+// Save generated webpack config to webpack.config.js at the
+// root dir of npm package
 exports.saveCommand = opts => {
     const file = path.resolve(findRoot(), "webpack.config.js")
-    const code = generate(null, generateSettings(opts))
+    const code = generate(generateSettings(opts))
     fs.writeFileSync(file, code)
-    info(`saved generated webpack config to ${file}`)
+    logInfo(`saved generated webpack config to ${file}`)
 }
 
+// Save generated webpack config to temporary file and use it with webpack-cli
 exports.runCommand = opts => {
-    const code = generate(findRoot(), generateSettings(opts))
+    const signalExit = require("signal-exit")
+
+    const code = generate(generateSettings(opts), findRoot())
 
     const file = path.join(
         os.tmpdir(),
-        `icepack-${Math.floor(Math.random() * 99999)}.js`
+        `icepack-${Math.floor(Math.random() * 9999999)}.js`
     )
 
     fs.writeFileSync(file, code)
-    process.on("exit", () => fs.unlinkSync(file))
+
+    logInfo(`saved generated webpack config to ${file}`)
+
+    signalExit(() => {
+        console.log()
+        logInfo(`removing ${file}`)
+        fs.unlinkSync(file)
+    })
 
     const cliPath = require.resolve("webpack-cli")
-    // Become Webpack!
     process.argv = [process.argv[0], cliPath, "--config", file]
+
+    logInfo("starting webpack-cli")
+    console.log()
+
+    // Become Webpack!
     require(cliPath)
 }

@@ -2,6 +2,8 @@
 
 // SUPPORTS
 
+// Installing on demand
+
 // Entry:
 // One entry
 // Array of entries

@@ -3,7 +3,7 @@ const path = require("path")
 const escape = str => JSON.stringify(str)
 
 // CONFIG GENERATION
-module.exports = (dirname, settings) => {
+module.exports = (settings, dirname) => {
     let config = 'const path = require("path")\n\n'
 
     config += `module.exports = {
