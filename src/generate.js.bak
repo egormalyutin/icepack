@@ -7,6 +7,7 @@ const { sanitize } = require("./util")
 // TODO: prod and dev mode
 // TODO: detect uses of plugins
 // TODO: use prettier
+// TODO: detect index.ts or index.html
 
 module.exports = (settings, dirname) => {
     const req = m => sanitize(dirname ? require.resolve(m) : m)

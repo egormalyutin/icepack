@@ -3,6 +3,7 @@
 // SUPPORTS
 
 // Installing on demand
+// TODO: code generation
 
 // Entry:
 // One entry
@@ -28,6 +29,7 @@
 // Min
 
 // CSS:
+// Autoprefixer
 // Sass
 // Scss
 // Stylus
