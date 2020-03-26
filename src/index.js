@@ -1,5 +1,6 @@
 const process = require("process")
 const path = require("path")
+const { inspect } = require("util")
 const fs = require("fs").promises
 const { R_OK } = require("fs").constants
 
@@ -8,8 +9,9 @@ const webpack = require("webpack")
 const generateConfig = require("./generate-config")
 
 // TODO: entry as args, help, examples
+// TODO: multiple dist
 
-const opts = require("yargs")
+const parser = require("yargs")
     .detectLocale(false)
 
     .usage("Usage: $0 [options]")
@@ -17,7 +19,7 @@ const opts = require("yargs")
     .option("entry", {
         alias: "e",
         type: "string",
-        description: "Entry file"
+        description: "Entry file (can be specified multiple times)"
     })
 
     .array("entry")
@@ -31,7 +33,7 @@ const opts = require("yargs")
     .option("development", {
         alias: "dev",
         type: "boolean",
-        description: "Development mode"
+        description: "Development mode (production mode is default)"
     })
 
     .option("tsconfig", {
@@ -40,10 +42,30 @@ const opts = require("yargs")
         description: "Path to tsconfig.json"
     })
 
+    .option("inspect", {
+        alias: "in",
+        type: "boolean",
+        description: "Inspect Webpack config"
+    })
+
+    .option("single-js", {
+        alias: "sj",
+        type: "boolean",
+        description: "Generate single minified .js in production mode"
+    })
+
     .alias("h", "help")
     .alias("v", "version")
 
-    .parse()
+    .strict()
+
+const opts = parser.parse()
+
+if (Array.isArray(opts.dist)) {
+    parser.showHelp()
+    console.error("\nMultiple dist directories aren't supported at this moment")
+    process.exit(1)
+}
 
 const runWebpack = config =>
     webpack(config, (err, stats) => {
@@ -55,12 +77,7 @@ const runWebpack = config =>
             process.exit(1)
         }
 
-        console.log(
-            stats.toString({
-                preset: "normal",
-                colors: true
-            })
-        )
+        console.log(stats.toString({ colors: true }))
     })
 
 const exists = async pth => {
@@ -72,14 +89,13 @@ const exists = async pth => {
     }
 }
 
-const toItem = x => (Array.isArray(x) ? x[x.length - 1] : x)
-
 const generateSettings = async opts => {
     settings = {
         production: !opts.development,
         entries: opts.entry,
-        dist: toItem(opts.dist || "dist"),
-        tsconfig: opts.tsconfig
+        dist: opts.dist || "dist",
+        tsconfig: opts.tsconfig,
+        singleJS: opts["single-js"]
     }
 
     if (!settings.entries || settings.entries.length == 0) {
@@ -96,5 +112,10 @@ const generateSettings = async opts => {
 ;(async () => {
     const settings = await generateSettings(opts)
     const config = generateConfig(settings)
+
+    if (opts.inspect) {
+        console.log(inspect(config, { depth: 999999, colors: true }))
+    }
+
     runWebpack(config)
 })()

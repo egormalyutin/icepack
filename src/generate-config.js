@@ -1,13 +1,11 @@
 const path = require("path")
 
-// TODO: paths relative to cwd when saving
-// TODO: modes: single minified js or .min.js and .js
-// TODO: detect and install uses of plugins
-// TODO: use prettier
+// TODO: config gen
 // TODO: detect index.ts or index.html or index.js
-// TODO: err on more than one dist
-// TODO: tsconfig option
+// TODO: output file
 // TODO: gcc, custom min plugin
+// TODO: libraryTarget, public path, target, externals, externals regexp
+// TODO: env
 
 module.exports = settings => {
     const entries = {}
@@ -17,7 +15,7 @@ module.exports = settings => {
 
         entries[name] = entry
 
-        if (settings.production) {
+        if (settings.production && !settings.singleJS) {
             entries[name + ".min"] = entry
         }
     }
@@ -33,16 +31,17 @@ module.exports = settings => {
         },
 
         resolve: {
+            modules: [".", "node_modules"],
             extensions: [".ts", ".tsx", ".js", ".jsx"]
         },
 
         module: {
             rules: [
                 {
-                    test: /\\.tsx?$/,
+                    test: /\.tsx?$/,
                     loader: "ts-loader",
                     options: {
-                        configFile: settings.tsconfig
+                        configFile: settings.tsconfig || "tsconfig.json"
                     }
                 }
             ]
@@ -53,7 +52,7 @@ module.exports = settings => {
             minimizer: settings.production
                 ? [
                       new (require("terser-webpack-plugin"))({
-                          include: /\\.min\\.js$/
+                          include: settings.singleJS ? /\.js$/ : /\.min\.js$/
                       })
                   ]
                 : []
