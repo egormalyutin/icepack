@@ -4,19 +4,24 @@ const { inspect } = require("util")
 const fs = require("fs").promises
 const { R_OK } = require("fs").constants
 
+const yargs = require("yargs")
+
 const webpack = require("webpack")
 
 // TODO: help, examples
-// TODO: detect index.ts or index.html or index.js
 // TODO: gcc, custom min plugin
-// TODO: public path, externals, externals regexp
 // TODO: env
 // TODO: default tsconfig
 // TODO: append, prepend
 // TODO: disable/only assets
 // TODO: main.js, glob
+// TODO: disable smaps for entry
+// TODO: config gen
+// TODO: 4 replace options for entries
+// TODO: inline source maps, enable for entry
+// TODO: no source source maps for production, ext source maps for development
 
-const parser = require("yargs")
+const parser = yargs
     .detectLocale(false)
 
     .usage("Usage: $0 [options]")
@@ -30,8 +35,12 @@ const parser = require("yargs")
             "tsconfig",
             "inspect",
             "single-js",
+            "only-min-js",
             "library-target",
-            "devtool"
+            "public-path",
+            "devtool",
+            "external",
+            "target"
         ],
         "Webpack options:"
     )
@@ -41,11 +50,11 @@ const parser = require("yargs")
         type: "string",
         description:
             "Entry file (can be specified multiple times, " +
-            "default is src/index.ts or src/index.js)",
+            "default is src/index.ts or src/index.js or " +
+            "src/main.ts or src/main.js, checked in this order)",
+        array: true,
         default: []
     })
-
-    .array("entry")
 
     .option("entry-output", {
         alias: "eo",
@@ -53,11 +62,10 @@ const parser = require("yargs")
         description:
             "Entry file with output bundle name " +
             "(accepts 2 arguments, can be specified multiple times)",
+        array: true,
+        nargs: 2,
         default: []
     })
-
-    .array("entry-output")
-    .nargs("entry-output", 2)
 
     .option("dist", {
         alias: "d",
@@ -67,7 +75,7 @@ const parser = require("yargs")
     })
 
     .option("production", {
-        alias: "prod",
+        alias: "p",
         type: "boolean",
         description: "Production mode (development mode is default)",
         default: false
@@ -94,6 +102,13 @@ const parser = require("yargs")
         default: false
     })
 
+    .option("only-min-js", {
+        alias: "omjs",
+        type: "boolean",
+        description: "Generate single minified .min.js in production mode",
+        default: false
+    })
+
     .option("library-target", {
         alias: "lt",
         type: "string",
@@ -101,16 +116,78 @@ const parser = require("yargs")
         default: "var"
     })
 
-    .option("devtool", {
-        alias: "dt",
+    .option("public-path", {
+        alias: "pp",
         type: "string",
+        description: "publicPath Webpack option",
+        default: ""
+    })
+
+    .option("inline-source-maps", {
+        alias: "ism",
+        type: "boolean",
+        description: "Enable inlined source maps",
+        default: false
+    })
+
+    .option("inline-source-maps-entry", {
+        alias: "isme",
+        type: "string",
+        array: true,
+        description: "Enable inlined source maps for entries (ACCEPTS REGEXPS)",
+        default: []
+    })
+
+    .option("source-maps", {
+        alias: "sm",
+        type: "boolean",
+        description: "Enable source maps",
+        default: false
+    })
+
+    .option("source-maps-entry", {
+        alias: "sme",
+        type: "string",
+        array: true,
+        description: "Enable source maps for entries (ACCEPTS REGEXPS)",
+        default: []
+    })
+
+    .option("no-source-source-maps", {
+        alias: "nssm",
+        type: "boolean",
+        description: "Enable source maps without sources included",
+        default: false
+    })
+
+    .option("no-source-source-maps-entry", {
+        alias: "nssme",
+        type: "string",
+        array: true,
         description:
-            "devtool Webpack option (by default in production is " +
-            "none, in development is source-map)"
+            "Enable source maps without sources included " +
+            "for entries (ACCEPTS REGEXPS)",
+        default: []
+    })
+
+    .option("external", {
+        alias: "ext",
+        type: "string",
+        array: true,
+        description: "externals Webpack option (ACCEPTS REGEXPS)",
+        default: []
+    })
+
+    .option("target", {
+        type: "string",
+        description: "target Webpack option",
+        default: "web"
     })
 
     .alias("h", "help")
     .alias("v", "version")
+
+    .wrap(yargs.terminalWidth())
 
     .strict()
 
@@ -144,6 +221,8 @@ const exists = async pth => {
     }
 }
 
+const removeEmpty = arr => arr.filter(Boolean)
+
 ;(async () => {
     // ENTRIES
     const entries = {}
@@ -171,6 +250,7 @@ const exists = async pth => {
     if (opts.production && !opts.singleJs) {
         for (const name in entries) {
             entries[name + ".min"] = entries[name]
+            if (opts.onlyMinJs) delete entries[name]
         }
     }
 
@@ -183,7 +263,8 @@ const exists = async pth => {
         output: {
             path: path.resolve(opts.dist),
             filename: "[name].js",
-            libraryTarget: opts.libraryTarget
+            libraryTarget: opts.libraryTarget,
+            publicPath: opts.publicPath
         },
 
         resolve: {
@@ -203,18 +284,58 @@ const exists = async pth => {
             ]
         },
 
-        devtool: opts.devtool || opts.production ? "none" : "source-map",
+        devtool: false,
+
+        externals: opts.external.map(e => new RegExp(e)),
+
+        target: opts.target,
 
         optimization: {
             minimize: opts.production,
             minimizer: opts.production
                 ? [
                       new (require("terser-webpack-plugin"))({
-                          include: opts.singleJs ? /\.js$/ : /\.min\.js$/
+                          include: opts.singleJs ? /\.js$/ : /\.min\.js$/,
+                          sourceMap: true
                       })
                   ]
                 : []
-        }
+        },
+
+        plugins: [
+            ...(opts.inlineSourceMaps
+                ? new webpack.SourceMapDevToolPlugin({})
+                : []),
+            ...opts.inlineSourceMapsEntry.map(
+                r => new webpack.SourceMapDevToolPlugin({ test: new RegExp(r) })
+            ),
+            ...(opts.sourceMaps
+                ? new webpack.SourceMapDevToolPlugin({
+                      filename: "[name].js.map"
+                  })
+                : []),
+            ...opts.sourceMapsEntry.map(
+                r =>
+                    new webpack.SourceMapDevToolPlugin({
+                        test: new RegExp(r),
+                        filename: "[name].js.map"
+                    })
+            ),
+            ...(opts.noSourceSourceMaps
+                ? new webpack.SourceMapDevToolPlugin({
+                      noSources: true,
+                      filename: "[name].js.map"
+                  })
+                : []),
+            ...opts.noSourceSourceMapsEntry.map(
+                r =>
+                    new webpack.SourceMapDevToolPlugin({
+                        test: new RegExp(r),
+                        noSources: true,
+                        filename: "[name].js.map"
+                    })
+            )
+        ]
     }
 
     if (opts.inspect) {
@@ -222,4 +343,7 @@ const exists = async pth => {
     }
 
     runWebpack(config)
-})()
+})().catch(err => {
+    console.error(err)
+    process.exit(1)
+})
